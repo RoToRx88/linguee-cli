@@ -1,39 +1,36 @@
 package main
 
 import (
-	"fmt"
-	"os"
-	"net/http"
-	"io/ioutil"
 	"encoding/json"
+	"fmt"
 	"github.com/buger/jsonparser"
+	"io/ioutil"
+	"net/http"
+	"os"
 )
-
 
 var translation_entity translation_model
 
-
 func get_exact_matches(matches []interface{}) {
 	total_size := len(matches)
-	for translation_entity.number_of_translation < total_size{
+	for translation_entity.number_of_translation < total_size {
 		translation_entity.translation = append(translation_entity.translation, matches[translation_entity.number_of_translation].(map[string]interface{})["text"].(string))
 		translation_entity.number_of_translation++
 	}
 }
 
-
 func request_translation() string {
 	resp, _ := http.Get(fmt.Sprintf("http://localhost:8000/api?q=%v&src=%v&dst=%v", translation_entity.query, translation_entity.src_lang, translation_entity.dest_lang))
-	defer 	resp.Body.Close()
+	defer resp.Body.Close()
 
 	if resp.StatusCode == 200 {
 
 		bodyBytes, _ := ioutil.ReadAll(resp.Body)
 		err := json.Unmarshal(bodyBytes, &translation_entity.response_body)
-		
+
 		if err == nil {
 			exact_match := translation_entity.response_body.(map[string]interface{})["exact_matches"]
-			if exact_match != nil  && len(exact_match.([]interface{})) > 0 {
+			if exact_match != nil && len(exact_match.([]interface{})) > 0 {
 				element := translation_entity.response_body.(map[string]interface{})["exact_matches"].([]interface{})[0].(map[string]interface{})["translations"].([]interface{})
 				get_exact_matches(element)
 				fmt.Println(translation_entity.number_of_translation, "Exact match: ", translation_entity.translation)
@@ -47,7 +44,6 @@ func request_translation() string {
 	}
 	return ""
 }
-
 
 func main() {
 
